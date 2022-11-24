@@ -22,6 +22,7 @@
 
 // Example creating a thermocouple instance with software SPI on any three
 // digital IO pins.
+// change here when running on MEGA
 #define MAXDO   3
 #define MAXCS   4
 #define MAXCLK  5
@@ -62,6 +63,9 @@ void setup() {
 
 void loop() {
   // basic readout test, just print the current temp
+  /* TODO: add a way to show the current time for that temperature measurement, 
+  maybe add needed commas so it copy pastes nicely into a csv*/
+  
    Serial.print("Internal Temp = ");
    Serial.println(thermocouple.readInternal());
 
@@ -75,6 +79,7 @@ void loop() {
    } else {
      Serial.print("C = ");
      Serial.println(c);
+
    }
    //Serial.print("F = ");
    //Serial.println(thermocouple.readFahrenheit());
