@@ -49,10 +49,10 @@ void setup() {
 
   while (!Serial) delay(1); // wait for Serial on Leonardo/Zero, etc
 
-  Serial.println("MAX31855 test");
+  // Serial.println("MAX31855 test");
   // wait for MAX chip to stabilize
   delay(500);
-  Serial.print("Initializing sensor...");
+  // Serial.print("Initializing sensor...");
   if (!thermocouple.begin()) {
     Serial.println("ERROR.");
     while (1) delay(10);
@@ -62,15 +62,14 @@ void setup() {
   // Multiple checks can be logically OR'd together.
   // thermocouple.setFaultChecks(MAX31855_FAULT_OPEN | MAX31855_FAULT_SHORT_VCC);  // short to GND fault is ignored
 
-  Serial.println("DONE.");
+  // Serial.println("DONE.");
+  Serial.println("Time (ms), Temperature (C)");
 }
 
 void loop() {
   // basic readout test, just print the current temp
-  /* TODO: add a way to show the current time for that temperature measurement, 
-  maybe add needed commas so it copy pastes nicely into a csv*/
-   Serial.print("Internal Temp = ");
-   Serial.println(thermocouple.readInternal());
+  //  Serial.print("Internal Temp = ");
+  //  Serial.println(thermocouple.readInternal());
    currentMillis = millis();
 
    double c = thermocouple.readCelsius();
@@ -81,8 +80,8 @@ void loop() {
     //  if (e & MAX31855_FAULT_SHORT_GND) Serial.println("FAULT: Thermocouple is short-circuited to GND.");
     //  if (e & MAX31855_FAULT_SHORT_VCC) Serial.println("FAULT: Thermocouple is short-circuited to VCC.");
    } else {
-     Serial.println(currentMillis, 5);
-     Serial.print("C = ");
+     Serial.print(currentMillis, 5);
+     Serial.print(", ");
      Serial.println(c);
 
    }
