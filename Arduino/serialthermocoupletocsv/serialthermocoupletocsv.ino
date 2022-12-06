@@ -60,7 +60,8 @@ void setup() {
 
   // OPTIONAL: Can configure fault checks as desired (default is ALL)
   // Multiple checks can be logically OR'd together.
-  // thermocouple.setFaultChecks(MAX31855_FAULT_OPEN | MAX31855_FAULT_SHORT_VCC);  // short to GND fault is ignored
+  // thermocouple.setFaultChecks(MAX31855_FAULT_OPEN | MAX31855_FAULT_SHORT_VCC);  
+  // short to GND fault is ignored
 
   // Serial.println("DONE.");
   Serial.println("Temperature Data");

@@ -4,17 +4,17 @@ import numpy as np
 
 """
 When using PuTTY to make the .csv this will read, uncheck 'Include Header', 
-change session logging to 'printable output', and make sure the file name given 
-matches with the file name used in this code (e.g temperaturedata.csv)
-
-Change the variable fileName as needed to use with different files
+change session logging to 'printable output', set the connection type to 'Serial'
+and set the name to the port Arduino is using, and make sure the file name 
+given matches with the file name used in this code (e.g temperaturedata.csv)
 """
 
+#Change fileName as needed to use with different files
+fileName = 'temperaturedata.csv'
 x = []
 y = []
 headerCheck = 0
 plotTitle = ""
-fileName = 'temperaturedata.csv'
 
   
 with open(fileName,'r') as csvfile:
