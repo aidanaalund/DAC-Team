@@ -3,20 +3,26 @@ import csv
 import numpy as np
 
 """
-When using PuTTY to make the .csv this will read, uncheck 'Include Header', 
+If using PuTTY to make the .csv this will read, uncheck 'Include Header', 
 change session logging to 'printable output', set the connection type to 'Serial'
 and set the name to the port Arduino is using, and make sure the file name 
 given matches with the file name used in this code (e.g temperaturedata.csv)
 """
 
-#Change fileName as needed to use with different files
+#for creating .csv
+arduino_port = "COM8"
+baud = 9600
 fileName = 'temperaturedata.csv'
+samples = 10
+print_labels = False
+
+#for parsing .csv
 x = []
 y = []
 headerCheck = 0
 plotTitle = ""
 
-  
+#displays data
 with open(fileName,'r') as csvfile:
     lines = csv.reader(csvfile, delimiter=',')
     for row in lines:
