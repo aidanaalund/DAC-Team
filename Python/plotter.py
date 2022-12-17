@@ -9,13 +9,6 @@ and set the name to the port Arduino is using, and make sure the file name
 given matches with the file name used in this code (e.g temperaturedata.csv)
 """
 
-#for creating .csv
-arduino_port = "COM8"
-baud = 9600
-fileName = 'temperaturedata.csv'
-samples = 10
-print_labels = False
-
 #for parsing .csv
 x = []
 y = []
