@@ -64,8 +64,8 @@ void setup() {
   // short to GND fault is ignored
 
   // Serial.println("DONE.");
-  Serial.println("Temperature Data");
-  Serial.println("Time (ms), Temperature (C)");
+  Serial.println("Temperature_Data");
+  Serial.println("Time(ms) Temperature(C)");
 }
 
 void loop() {
@@ -83,7 +83,7 @@ void loop() {
     //  if (e & MAX31855_FAULT_SHORT_VCC) Serial.println("FAULT: Thermocouple is short-circuited to VCC.");
    } else {
      Serial.print(currentMillis, 6);
-     Serial.print(", ");
+     Serial.print(" ");
      Serial.println(c);
 
    }

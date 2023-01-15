@@ -14,6 +14,7 @@ x = []
 y = []
 headerCheck = 0
 plotTitle = ""
+fileName = 'test.csv'
 
 #displays data
 with open(fileName,'r') as csvfile:
