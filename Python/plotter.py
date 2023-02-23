@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 import csvmaker
-
+#random
 
 def plot(portname,file,samples,title):
     
