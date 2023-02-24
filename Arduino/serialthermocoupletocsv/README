@@ -1,3 +1,5 @@
+THERMOCOUPLE OPERATION
+
 Ensure you have installed the "Adafruit MAX31855 library" from the Arduino IDE
 If not, here are the steps:
   1. Start your Arduino IDE
