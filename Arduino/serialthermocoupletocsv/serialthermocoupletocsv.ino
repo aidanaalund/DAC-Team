@@ -72,7 +72,6 @@ void setup() {
   // short to GND fault is ignored
 
   // Serial.println("DONE.");
-  Serial.println("Temperature_Data");
   Serial.println("Time(ms) Temperature1(C) Temperature2(C) Temperature3(C)");
 }
 

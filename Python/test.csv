@@ -1,5 +1,4 @@
-Temperature_Data,,,
-Time(ms),Temperature(C),Temperature2(C),Temperature3(C)
+Time (ms),Temperature (C),Temperature2 (C),Temperature3 (C)
 2151,21.75,30,25
 15324,21.75,29,25
 32501,21.75,28,26
