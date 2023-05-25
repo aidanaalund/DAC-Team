@@ -24,14 +24,22 @@
 // Example creating a thermocouple instance with software SPI on any three
 // digital IO pins.
 // change here when running on MEGA
-#define MAXDO   3
-#define MAXCS   4
-#define MAXCLK  5
+#define MAXDO1   3
+#define MAXCS1   4
+#define MAXCLK1  5
+#define MAXDO2   6
+#define MAXCS2   7
+#define MAXCLK2  8
+#define MAXDO3   9
+#define MAXCS3   10
+#define MAXCLK3  11
 unsigned long startMillis;
 unsigned long currentMillis;
 
 // initialize the Thermocouple
-Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
+Adafruit_MAX31855 thermocouple1(MAXCLK1, MAXCS1, MAXDO1);
+Adafruit_MAX31855 thermocouple2(MAXCLK2, MAXCS2, MAXDO2);
+Adafruit_MAX31855 thermocouple3(MAXCLK3, MAXCS3, MAXDO3);
 
 // Example creating a thermocouple instance with hardware SPI
 // on a given CS pin.
@@ -53,7 +61,7 @@ void setup() {
   // wait for MAX chip to stabilize
   delay(500);
   // Serial.print("Initializing sensor...");
-  if (!thermocouple.begin()) {
+  if (!thermocouple1.begin() && !thermocouple2.begin() && !thermocouple3.begin()) {
     Serial.println("ERROR.");
     while (1) delay(10);
   }
@@ -64,8 +72,7 @@ void setup() {
   // short to GND fault is ignored
 
   // Serial.println("DONE.");
-  Serial.println("Temperature_Data");
-  Serial.println("Time(ms) Temperature(C)");
+  Serial.println("Time(ms) Temperature1(C) Temperature2(C) Temperature3(C)");
 }
 
 void loop() {
@@ -74,17 +81,23 @@ void loop() {
   //  Serial.println(thermocouple.readInternal());
    currentMillis = millis();
 
-   double c = thermocouple.readCelsius();
-   if (isnan(c)) {
+   double c1 = thermocouple1.readCelsius();
+   double c2 = thermocouple2.readCelsius();
+   double c3 = thermocouple3.readCelsius();
+   if (isnan(c1) && isnan(c2) && isnan(c3)) {
      Serial.println("Thermocouple fault(s) detected!");
-     uint8_t e = thermocouple.readError();
+     uint8_t e1 = thermocouple1.readError();
+     uint8_t e2 = thermocouple2.readError();
+     uint8_t e3 = thermocouple3.readError();
     //  if (e & MAX31855_FAULT_OPEN) Serial.println("FAULT: Thermocouple is open - no connections.");
     //  if (e & MAX31855_FAULT_SHORT_GND) Serial.println("FAULT: Thermocouple is short-circuited to GND.");
     //  if (e & MAX31855_FAULT_SHORT_VCC) Serial.println("FAULT: Thermocouple is short-circuited to VCC.");
    } else {
      Serial.print(currentMillis, 6);
      Serial.print(" ");
-     Serial.println(c);
+     Serial.print(c1);
+     Serial.print(c2);
+     Serial.println(c3);
 
    }
    //Serial.print("F = ");
