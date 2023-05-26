@@ -1,3 +1,0 @@
-# telling git to ignore .pyc files
-*.pyc
-
