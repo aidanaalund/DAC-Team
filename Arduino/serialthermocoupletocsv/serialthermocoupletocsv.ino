@@ -41,6 +41,8 @@ Adafruit_MAX31855 thermocouple1(MAXCLK1, MAXCS1, MAXDO1);
 Adafruit_MAX31855 thermocouple2(MAXCLK2, MAXCS2, MAXDO2);
 Adafruit_MAX31855 thermocouple3(MAXCLK3, MAXCS3, MAXDO3);
 
+// TODO: Initialize other sensors here
+
 // Example creating a thermocouple instance with hardware SPI
 // on a given CS pin.
 //#define MAXCS   10
@@ -65,20 +67,16 @@ void setup() {
     Serial.println("ERROR.");
     while (1) delay(10);
   }
-
   // OPTIONAL: Can configure fault checks as desired (default is ALL)
   // Multiple checks can be logically OR'd together.
   // thermocouple.setFaultChecks(MAX31855_FAULT_OPEN | MAX31855_FAULT_SHORT_VCC);  
   // short to GND fault is ignored
 
-  // Serial.println("DONE.");
+  // Add new labels to this print statement as we add new sensors
   Serial.println("Time(ms) Temperature1(C) Temperature2(C) Temperature3(C)");
 }
 
 void loop() {
-  // basic readout test, just print the current temp
-  //  Serial.print("Internal Temp = ");
-  //  Serial.println(thermocouple.readInternal());
    currentMillis = millis();
 
    double c1 = thermocouple1.readCelsius();
@@ -89,6 +87,7 @@ void loop() {
      uint8_t e1 = thermocouple1.readError();
      uint8_t e2 = thermocouple2.readError();
      uint8_t e3 = thermocouple3.readError();
+    //  old error messages: these won't work as intended
     //  if (e & MAX31855_FAULT_OPEN) Serial.println("FAULT: Thermocouple is open - no connections.");
     //  if (e & MAX31855_FAULT_SHORT_GND) Serial.println("FAULT: Thermocouple is short-circuited to GND.");
     //  if (e & MAX31855_FAULT_SHORT_VCC) Serial.println("FAULT: Thermocouple is short-circuited to VCC.");
@@ -102,6 +101,6 @@ void loop() {
    }
    //Serial.print("F = ");
    //Serial.println(thermocouple.readFahrenheit());
-
+   // delay the program by 2000 milliseconds    
    delay(2000);
 }

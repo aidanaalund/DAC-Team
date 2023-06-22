@@ -1,7 +1,7 @@
 import serial as ps
 import csv
 
-
+# Only run this file directly if you don't want to plot anything
 def makecsv(port,file,samplescount):
     #initializes reader from the provided USB port
     arduino_port = port
@@ -28,3 +28,7 @@ def makecsv(port,file,samplescount):
     print("Created file")
     
     # comment - Arielle
+
+
+if __name__ == '__main__':
+    makecsv('COM5','test.csv',10)
