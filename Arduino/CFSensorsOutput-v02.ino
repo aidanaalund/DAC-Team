@@ -1,3 +1,13 @@
+
+
+//// Libraries
+#include <Adafruit_SCD30.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <PID_v1.h>
+#include <Wire.h>
+#include <SparkFun_FS3000_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
+
 /*
 Mockup/wip of planned code for the museum
 TODO:
@@ -18,7 +28,7 @@ boolean restingState();
 // array of the states
 
 // Define the pins for the electrical devices
-const int V1 = 2;   // top valve
+const int V1;       // top valve
 const int V2 = 3;   // bottom valve
 const int V3 = 4;   // to algae
 const int F1 = 5;   // top fan
@@ -27,13 +37,6 @@ const int P1 = 7;   // vacuum pump
 const int Heat = 8; // heat
 // int to track state of the machine. used to index into array of machine states
 static int currentState = 0;
-//// Libraries
-#include <Adafruit_SCD30.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include <PID_v1.h>
-#include <Wire.h>
-#include <SparkFun_FS3000_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
 
 FS3000 fs;
 
