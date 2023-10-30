@@ -9,11 +9,17 @@
 #include <SparkFun_FS3000_Arduino_Library.h> //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
 
 /*
-Mockup/wip of planned code for the museum
-TODO:
-on/off switch
-array of functions
+Current plan for automation:
+Each state the DAC will be in happens sequentially, we can use an array to track each stage.
+There will be an array with pointers to functions for each state the DAC can have.
+Once the conditions to proceed to the next state are met, currentState will increment by 1
 
+The DAC needs to start when 5 people are blowing. I thnk the easiest way to do this would be
+if(numbOfPeople == 5){
+    do one DAC cycle
+    DAC goes back to resting state
+}
+and then numbOfPeople can be tracked in loop and we can hopefully calculate this with data from senors
 */
 
 /*
