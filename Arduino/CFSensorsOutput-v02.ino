@@ -10,20 +10,18 @@
 
 /*
 Current plan for automation:
-Each state the DAC will be in happens sequentially, we can use an array to track each stage.
-There will be an array with pointers to functions for each state the DAC can have.
-Once the conditions to proceed to the next state are met, currentState will increment by 1
+unsure of plan until we meet the person who originally wrote the code.
+Regardless we should make functions that correspond to each state of the machine.
+
+Two approaches we could take to automate would be with switch cases, or an array of pointers to the functions for each state.
+We could use the array because each stage happens sequentially so once one is done, we can incrememt do the next.
 
 The DAC needs to start when 5 people are blowing. I thnk the easiest way to do this would be
 if(numbOfPeople == 5){
     do one DAC cycle
     DAC goes back to resting state
 }
-and then numbOfPeople can be tracked in loop and we can hopefully calculate this with data from senors
-*/
-
-/*
-I'm asumming the the pins will change with the arduino mega.
+and then numbOfPeople can be tracked in loop and we can calculate this with data from senors
 */
 
 // functions for each state
@@ -31,8 +29,7 @@ boolean adsorbtion();
 boolean desoportion();
 boolean restingState();
 
-// array of the states
-
+// im assuming some of these will change with the arduino mega
 // Define the pins for the electrical devices
 const int V1;       // top valve
 const int V2 = 3;   // bottom valve
@@ -111,16 +108,19 @@ void loop()
 }
 
 // functions for each state
+// TODO:
 boolean adsorbtion()
 {
     return true;
 }
 
+// TODO:
 boolean desoportion()
 {
     return true;
 }
 
+// TODO:
 boolean restingState()
 {
     return true;
