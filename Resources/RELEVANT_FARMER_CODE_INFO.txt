@@ -1,0 +1,31 @@
+二 - U+4E8C : Two
+氧 - U+6C27 : Oxygen
+化 - U+5316 : "To change, to transform, to become, to die, to melt"
+碳 - U+78B3 : Carbon
+
+26 ~ Tools box w/ mega + resistors + sensors + wires
+27 ~ ???
+
+Temperature address: on the actual product ? 
+
+CO2 sensors -> use I2C
+OneWire temperature
+
+left side sensors 
+right side actuators
+not 1:1 
+
+Why a multiplexer?
+we have 2 CO2 sensors & 2 FLOW sensors
+- both CO2 sensors have the same address
+	- couldn't connect both sensors to the same pin
+		because of this
+	- multiplexer allows us to read these two channels individualy
+	- function tcaselect lets use choose output channel for MUX
+		- tcaselect(1) -> CO2 Sensor 1
+		- tcaselect(2) -> CO2 Sensor 2
+		- tcaselect(3) -> Flow Sensor 1
+		- tcaselect(4) -> Flow Sensor 2
+
+The addition of the mega will likely force us to coalesce CFSensorsOutputHeater
+and CarbonFarmerOutputOnly together? 
