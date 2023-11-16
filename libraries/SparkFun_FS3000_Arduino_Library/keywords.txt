@@ -1,0 +1,24 @@
+######################################################################
+# Syntax Coloring Map for SparkFun FS3000 Sensor Library             #
+######################################################################
+# Class
+######################################################################
+
+FS3000	KEYWORD1
+
+######################################################################
+# Methods and Functions
+######################################################################
+
+begin	KEYWORD2
+readRaw	KEYWORD2
+readMetersPerSecond	KEYWORD2
+readMilesPerHour	KEYWORD2
+setRange	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+AIRFLOW_RANGE_7_MPS	LITERAL1
+AIRFLOW_RANGE_15_MPS	LITERAL1
