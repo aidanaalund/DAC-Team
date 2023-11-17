@@ -72,6 +72,11 @@ uint8_t sensor1[8] = { 0x28, 0x66, 0x99, 0x94, 0x97, 0xFF, 0x03, 0xF5 };  // Add
 uint8_t sensor2[8] = { 0x28, 0xF9, 0x29, 0x94, 0x97, 0x0F, 0x03, 0xB6 };
 uint8_t sensor3[8] = { 0x28, 0x3A, 0x5F, 0x94, 0x97, 0x03, 0x03, 0xCC };
 
+
+// Heater PID Settings
+double Setpoint, Input, Output;
+PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
+
 //// Function for selecing MUX output channel
 void tcaselect(uint8_t channel) {
   if (channel > 7)
@@ -139,8 +144,9 @@ void setup() {
     digitalWrite(Heat, LOW);
 
     // Heater Controls
-    double Setpoint, Input, Output;
-PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
+  Setpoint = 70.0;            // set desired temperature
+  myPID.SetMode(AUTOMATIC);   // set PID to automatic mode
+  myPID.SetSampleTime(60000); // set PID cycle time to 1 minute
 
 
     // copied from readAllSensors
