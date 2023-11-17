@@ -72,6 +72,11 @@ uint8_t sensor1[8] = { 0x28, 0x66, 0x99, 0x94, 0x97, 0xFF, 0x03, 0xF5 };  // Add
 uint8_t sensor2[8] = { 0x28, 0xF9, 0x29, 0x94, 0x97, 0x0F, 0x03, 0xB6 };
 uint8_t sensor3[8] = { 0x28, 0x3A, 0x5F, 0x94, 0x97, 0x03, 0x03, 0xCC };
 
+
+// Heater PID Settings
+double Setpoint, Input, Output;
+PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
+
 //// Function for selecing MUX output channel
 void tcaselect(uint8_t channel) {
   if (channel > 7)
@@ -139,6 +144,10 @@ void setup() {
     digitalWrite(Heat, LOW);
 
     // Heater Controls
+  Setpoint = 70.0;            // set desired temperature
+  myPID.SetMode(AUTOMATIC);   // set PID to automatic mode
+  myPID.SetSampleTime(60000); // set PID cycle time to 1 minute
+
 
     // copied from readAllSensors
 
@@ -186,8 +195,33 @@ void setup() {
       while (1)
         ;  // Freeze
     }
+    // Set the range to match which version of the sensor you are using.
+  //  FS3000-1005 (0-7.23 m/sec) --->>>  AIRFLOW_RANGE_7_MPS
+  // FS3000-1015 (0-15 m/sec)   --->>>  AIRFLOW_RANGE_15_MPS
+  fs.setRange(AIRFLOW_RANGE_7_MPS);
+  // fs.setRange(AIRFLOW_RANGE_15_MPS);
+
+  Serial.println("Sensor is connected properly.");
+}
 
     void loop() {
+      if(minNumbOfPpl() /* ||  20 minutes passed*/){
+        bool done = false;
+        // use a do while instead
+        while(!done){
+          done = heating();
+        }
+        done = false;
+        while (!done){
+           done = desorption();
+        }
+           done = false;
+        while(!done){
+           done = cooling();
+        }
+      } else {
+        adsorption();
+      }
     }
 
 
@@ -201,7 +235,13 @@ boolean minNumbOfPpl(){
  current plan for each function is once called, it will run until it complete, once complete it returns true
 */
     // TODO:
-    boolean adsorbtion() {
+    boolean adsorption() {
+      digitalWrite(V1, HIGH); // top valve open
+      digitalWrite(V2, HIGH); // bottom valve open
+      digitalWrite(F1, HIGH); // fan 1 on
+      digitalWrite(V3, LOW);  // close to algae
+      digitalWrite(F2, LOW);  // fan 2 off
+      digitalWrite(P1, LOW);  // pump off
       return true;
     }
 
@@ -210,7 +250,17 @@ boolean minNumbOfPpl(){
       return true;
     }
     // TODO:
-    boolean desoportion() {
+    // return true when 5 min passed. Use millis
+    boolean desorption() {
+      if(/* not 5 min passed*/){
+      digitalWrite(V1, HIGH); // top valve open
+      digitalWrite(V2, LOW);  // bottom valve close
+      digitalWrite(V3, HIGH); // open to algae
+      digitalWrite(F1, HIGH); // fan 1 on
+      digitalWrite(F2, HIGH); // fan 2 on
+      digitalWrite(P1, HIGH); // pump on
+        return false;
+      }
       return true;
     }
     // TODO:
