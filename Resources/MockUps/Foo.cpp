@@ -5,30 +5,30 @@
 
 // directly related to the farmer/farmer pipeline
 static farmer::fStates farmer_state;
-static bool RUNNING = true;
 static int CUR_STATE = 0;
 
-// stuff for simulation
-const char* LINUX_CLEAR = "clear";
-const int SLEEP_DELAY = 1000;
+// defined for the sake of simulating runtime
+namespace simulation {
+  bool RUNNING = true;
+  const char* LINUX_CLEAR = "clear";
+  const int SLEEP_DELAY = 90000;
+}
 
 void setup() {
-  //setting default states
-  pinMode(V1, OUTPUT);
-  pinMode(V2, OUTPUT);
-  pinMode(V3, OUTPUT);
-  pinMode(F1, OUTPUT);
-  pinMode(F2, OUTPUT);
-  pinMode(P1, OUTPUT);
-  
-  farmer::cooling(&farmer_state);
-  updateOutputPins(&farmer_state); // setting defaults (everything to low)
+  //farmer setup & defaults
+  farmer::farmerPinSetup();
+  farmer::cooling(&farmer_state); // initial state in cooling
+  farmer::updateOutputPins(&farmer_state); // setting defaults (everything to low)
 
   // storing state functions in array, cooling -> adsorption -> heating -> desorption
-  farmer::stateFunc[0] = farmer::cooling;
-  farmer::stateFunc[1] = farmer::adsorption;
-  farmer::stateFunc[2] = farmer::heating;
-  farmer::stateFunc[3] = farmer::desorption;
+  farmer::stateFunc[0] = farmer::waitMinPeople;
+  farmer::stateFunc[1] = farmer::cooling;
+  farmer::stateFunc[2] = farmer::adsorption;
+  farmer::stateFunc[3] = farmer::heating;
+  farmer::stateFunc[4] = farmer::desorption;
+
+  // LED setup
+  led::ledPinSetup();
 }
 
 void loop() {
@@ -36,13 +36,13 @@ void loop() {
   bool can_move_on = farmer::stateFunc[CUR_STATE](&farmer_state);
   farmer::updateOutputPins(&farmer_state); // pass in states & update booleans
 
-  CUR_STATE = (CUR_STATE + can_move_on) * !(CUR_STATE == 3);
-  usleep(90000 * can_move_on);
-  if (CUR_STATE == 0) system(LINUX_CLEAR);
+  CUR_STATE = (CUR_STATE + can_move_on) * !(CUR_STATE == farmer::MAX_STATES - 1);
+  usleep(simulation::SLEEP_DELAY * can_move_on); // delay between state changes
+  if (CUR_STATE == 0) system(simulation::LINUX_CLEAR);
 }
 
 int main() {
   setup();
-  while (RUNNING)
+  while (simulation::RUNNING)
     loop();
 }
