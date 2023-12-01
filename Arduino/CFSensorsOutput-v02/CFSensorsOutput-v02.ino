@@ -1,4 +1,4 @@
-
+// LED & Experimentation Branch -> CFSesnorsOutput Modifications
 
 //// Libraries
 #include <Adafruit_SCD30.h>
@@ -7,6 +7,8 @@
 #include <PID_v1.h>
 #include <Wire.h>
 #include <SparkFun_FS3000_Arduino_Library.h>  //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
+
+#include "LEDCode.h"
 
 // pin numbers for outputs
 // TODO set pin numbers
@@ -25,6 +27,11 @@
 #define flowIn ;
 #define flowOut ;
 
+// LED light pins
+#define RPIN ;
+#define GPIN ;
+#define BPIN ;
+
 /*
 Current plan for automation:
 unsure of plan until we meet the person who originally wrote the code.
@@ -40,6 +47,8 @@ if(numbOfPeople == 5){
 }
 and then numbOfPeople can be tracked in loop and we can calculate this with data from senors
 */
+
+#define MAX_PEOPLE 5
 
 // functions for each state
 // not sure if we will need all of these
@@ -72,7 +81,6 @@ uint8_t sensor1[8] = { 0x28, 0x66, 0x99, 0x94, 0x97, 0xFF, 0x03, 0xF5 };  // Add
 uint8_t sensor2[8] = { 0x28, 0xF9, 0x29, 0x94, 0x97, 0x0F, 0x03, 0xB6 };
 uint8_t sensor3[8] = { 0x28, 0x3A, 0x5F, 0x94, 0x97, 0x03, 0x03, 0xCC };
 
-
 // Heater PID Settings
 double Setpoint, Input, Output;
 PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
@@ -98,12 +106,14 @@ void printTemperature(DeviceAddress deviceAddress) {
 }
 
 // function to get temp in Celcius
-float getTemperatureC(DeviceAddress deviceAddress{
+float getTemperatureC(DeviceAddress deviceAddress) {
   return sensors.getTempC(deviceAddress);
+}
+
 // function to get temp in Fahrenheit
-float getTemperatureF(DeviceAddress deviceAddress{
-    float tempC = sensors.getTempC(deviceAddress);
-  return  DallasTemperature::toFahrenheit(tempC));
+float getTemperatureF(DeviceAddress deviceAddress) {
+  float tempC = sensors.getTempC(deviceAddress);
+  return DallasTemperature::toFahrenheit(tempC));
 }
 
   // Define the time intervals for the sensor readings and case checking
@@ -202,6 +212,9 @@ void setup() {
   // fs.setRange(AIRFLOW_RANGE_15_MPS);
 
   Serial.println("Sensor is connected properly.");
+
+  // LED init
+  LEDSetup(RPIN, GPIN, BPIN);
 }
 
     void loop() {
@@ -227,8 +240,10 @@ void setup() {
 
 // TODO: function to check if the correct number of people are blowing, return true when there is enough.
 boolean minNumbOfPpl(){
-  return false;
-}
+  // placeholder: intensity of green channel based on # of people
+  LEDWrite(0, COLOR_MAX * (numbOfPpl / MAX_PEOPLE), 0);
+  return numbOfPpl >= MAX_PEOPLE;
+} 
 
   // functions for each state
   /*
