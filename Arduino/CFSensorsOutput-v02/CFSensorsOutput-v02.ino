@@ -28,9 +28,10 @@
 #define flowOut ;
 
 // LED light pins
-#define RPIN ;
-#define GPIN ;
-#define BPIN ;
+#define RPIN 3;
+#define GPIN 5;
+#define BPIN 6;
+#define APIN 9;
 
 /*
 Current plan for automation:
@@ -154,9 +155,9 @@ void setup() {
     digitalWrite(Heat, LOW);
 
     // Heater Controls
-  Setpoint = 70.0;            // set desired temperature
-  myPID.SetMode(AUTOMATIC);   // set PID to automatic mode
-  myPID.SetSampleTime(60000); // set PID cycle time to 1 minute
+    Setpoint = 70.0;            // set desired temperature
+    myPID.SetMode(AUTOMATIC);   // set PID to automatic mode
+    myPID.SetSampleTime(60000); // set PID cycle time to 1 minute
 
 
     // copied from readAllSensors
@@ -214,7 +215,7 @@ void setup() {
   Serial.println("Sensor is connected properly.");
 
   // LED init
-  LEDSetup(RPIN, GPIN, BPIN);
+  LEDSetup(RPIN, GPIN, BPIN /*, APIN*/); // uncomment if using waterproof strip
 }
 
     void loop() {
@@ -241,7 +242,7 @@ void setup() {
 // TODO: function to check if the correct number of people are blowing, return true when there is enough.
 boolean minNumbOfPpl(){
   // placeholder: intensity of green channel based on # of people
-  LEDWrite(0, COLOR_MAX * (numbOfPpl / MAX_PEOPLE), 0);
+  LEDWrite(0, COLOR_MAX * (numbOfPpl / MAX_PEOPLE), 0 /*, COLOR_MAX*/); // last param for alpha channel, uncomment when we have waterproof strip
   return numbOfPpl >= MAX_PEOPLE;
 } 
 
