@@ -6,6 +6,7 @@
 // LIGHTING
 #define FADESPEED 5 // rate at which each color fades
 #define LIGHTS_TOGGLE true // set to false (0) when you want lights off on upload
+#define MOCK_RED_CAP 256 // testing
 
 // reference code from this page:
 // https://learn.adafruit.com/rgb-led-strips/arduino-code
@@ -20,7 +21,7 @@ void setup() {
 
 /* Analog write with a LIGHTS_ON flag check*/
 void toggleWrite(uint8_t pin, int val) {
-  analogWrite(pin, val & LIGHTS_TOGGLE)
+  analogWrite(pin, val & LIGHTS_TOGGLE);
 }
 
 // Code for fade
@@ -37,7 +38,7 @@ void fadeCode() {
     toggleWrite(BLUEPIN, b);
     delay(FADESPEED);
   }
-  //fade from red to yellow
+  // fade from red to yellow
   for (g = 0; g < 256; g++) { 
     toggleWrite(GREENPIN, g);
     delay(FADESPEED);
@@ -52,7 +53,7 @@ void fadeCode() {
     toggleWrite(BLUEPIN, b);
     delay(FADESPEED);
   } 
-  fade from teal to blue
+  // fade from teal to blue
   for (g = 255; g > 0; g--) { 
     toggleWrite(GREENPIN, g);
     delay(FADESPEED);
