@@ -1,7 +1,9 @@
 // ARDUINO PIN SETUP
+// NOTE: ALL OF THESE PINS NEED TO HAVE PWM CAPABILITIES SINCE WE ARE USING DIGITAL OUTS
 #define BLUEPIN 3
 #define REDPIN 5
 #define GREENPIN 6
+#define ALPHAPIN 9
 
 // LIGHTING
 #define FADESPEED 5 // rate at which each color fades
@@ -12,11 +14,15 @@
 // https://learn.adafruit.com/rgb-led-strips/arduino-code
 
 // initial pins
+void whiteCode();
+
 void setup() {
   pinMode(BLUEPIN, OUTPUT);
   pinMode(REDPIN, OUTPUT);
   pinMode(GREENPIN, OUTPUT);
-  // pinMode(ALPHAPIN, OUTPUT); (waterproof LED strip has an extra wire)
+  // uncomment these two lines when working with the waterproof strip (this will just test all 4 on at once)
+  //pinMode(ALPHAPIN, OUTPUT); //(waterproof LED strip has an extra wire)
+  //whiteCode();
 }
 
 /* Analog write with a LIGHTS_ON flag check*/
@@ -26,7 +32,7 @@ void toggleWrite(uint8_t pin, int val) {
 
 // Code for fade
 void fadeCode() {
-  int r, g, b;
+  int r, g, b, w;
  
   // fade from blue to violet
   for (r = 0; r < 256; r++) { 
@@ -60,6 +66,26 @@ void fadeCode() {
   } 
 }
 
+void whiteCode() {
+  int r,g,b,w;
+  for (r = 0; r < 256; r++) { 
+    toggleWrite(REDPIN, r);
+    delay(FADESPEED);
+  }
+  for (b = 0; b < 256; b++) { 
+    toggleWrite(BLUEPIN, b);
+    delay(FADESPEED);
+  }
+  for (g = 0; g < 256; g++) { 
+    toggleWrite(GREENPIN, g);
+    delay(FADESPEED);
+  }  
+  for(w = 0; w < 256; w++){
+    toggleWrite(ALPHAPIN, w);
+    delay(FADESPEED);
+  }
+}
+
 // Yellow to Pure Green
 void LEDCode() {
   int r, g, b;
@@ -77,5 +103,6 @@ void LEDCode() {
 }
 
 void loop() {
-  fadeCode();
+  // fadeCode();
+  // whiteCode();
 }
