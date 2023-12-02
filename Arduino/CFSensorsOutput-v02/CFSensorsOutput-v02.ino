@@ -6,22 +6,23 @@
 #include <Wire.h>
 #include <SparkFun_FS3000_Arduino_Library.h>  //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
 
-// pin numbers for outputs
-// TODO set pin numbers
-#define valve1 ;    // top valve
-#define valve2 ;    // bottom valve
-#define valve3 ;    // to algae
-#define fan1 ;    // top fan
-#define fan2 ;    // fan 2 (to algae feeder & vacuum pump)
-#define pump1 ;    // vacuum pump
-#define heat ;  // heat
+#include "LEDCode.h"
 
-// MUX select numbers
-// TODO set channel numbers
-#define co2in ;
-#define co2out ;
-#define flowIn ;
-#define flowOut ;
+// pin numbers for outputs
+#define valve1 2;    // top valve
+#define valve2 3;    // bottom valve
+#define valve3 4;    // to algae
+#define fan1 5;    // top fan
+#define fan2 6;    // fan 2 (to algae feeder & vacuum pump)
+#define pump1 7;    // vacuum pump
+#define heat 8;  // heat
+
+// LED light pins
+#define RPIN 13;
+#define GPIN 12;
+#define BPIN 11;
+//TODO Make sure good number
+#define APIN 10;
 
 // Function prototypes
 void adsorption();
@@ -33,11 +34,21 @@ void tcaSelect(uint8_t);
 void printTemperature(DeviceAddress);
 float getTemperatureC(DeviceAddress);
 float getTemperatureF(DeviceAddress);
+double getAverageFlow();
 
-// int to track state of the machine. used to index into array of machine states
-static int currentState = 0;
-// int to track number of people blowing
-static int numbOfPpl = 0;
+enum State {
+  ADSORPTION,
+  DESORPTION,
+};
+
+// track state of the machine
+State currentState;
+// track number of people blowing
+static int numOfPpl = 0;
+// flow rate threshold
+const int FLOW_THRESHOLD = 5;
+// number of people blown threshold
+const int PEOPLE_THRESHOLD = 5;
 
 //// Define Pins/Addresses
 #define TCAADDR 0x70  // Multiplexer I2C address
@@ -59,8 +70,19 @@ double Setpoint, Input, Output;
 PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
 
 // Timer
-unsigned long previousMillis = 0; // Last time timer was updated
-const unsigned long INTERVAL = 300000; // 5 minute interval
+unsigned long startTime;
+const unsigned long desorptionDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Colors
+uint8_t* currentColor;
+uint8_t* newColor;
+uint8_t stage0[] = {254, 240, 1, 255};
+uint8_t stage1[] = {255, 206, 3, 255};
+uint8_t stage2[] = {253, 154, 1, 255};
+uint8_t stage3[] = {253, 97, 4, 255};
+uint8_t stage4[] = {255, 44, 5, 255};
+uint8_t stage5[] = {240, 5, 5, 255}
+
 
 void setup() {
     // Set the pin modes for the electrical devices
@@ -73,7 +95,8 @@ void setup() {
     pinMode(heat, OUTPUT);
 
     // Set the initial states of the electrical devices
-    restingState()
+    currentState = ADSORPTION;
+    currentColor = stage0;
 
     // Heater Controls
     Setpoint = 70.0; // set desired temperature
@@ -127,21 +150,77 @@ void setup() {
     flowSensor.setRange(AIRFLOW_RANGE_7_MPS);
 
     Serial.println("Sensor is connected properly.");
+
+    // LED init
+    LEDSetup(RPIN, GPIN, BPIN /*, APIN*/); // uncomment if using waterproof strip
 }
 
 void loop() {
-  if(minNumberofPpl() && !hasIntervalElapsed()){
-    
-    desorption();
-  }
-  else{
-    adsorption();
+  switch (currentState) {
+    case ADSORPTION:
+      adsorption();
+      if(getAvergaeFlow() >= FLOW_THRESHOLD){
+        numOfPpl++;
+        updateLedStrip();
+      }
+      if (minNumbOfPpl()) {
+        currentState = DESORPTION;
+        startTime = millis(); // Start the timer
+        numOfPpl = 0; // Reset count
+      }
+      break;
+      
+    case DESORPTION:
+      desorption();
+      if (millis() - startTime >= desorptionDuration) {
+        currentState = ADSORPTION;
+        updateLedStrip();
+      }
+      break;
   }
 }
 
-//Need work on timer functionality
-//Min Number of people functionality
-//Flow counting functionality
+
+void updateLedStrip(){
+  int delayTime = 10;
+  int steps = 200;
+  switch (numOfPpl){
+    case 0:
+      newColor = stage0;
+      break;
+    case 1:
+      newColor = stage1;
+      break;
+    case 2:
+      newColor = stage2;
+      break;
+    case 3:
+      newColor = stage3;
+      break;
+    case 4:
+      newColor = stage4;
+      break;
+    case 5:
+      newColor = stage5;
+      break;
+    default:
+      newColor = stage0;
+      break;
+  }
+  LEDTransition(currentColor, newColor, steps, delayTime)
+  currentColor = newColor;
+}
+
+double getAverageFlow(){
+    double Meas1 = fs.readMetersPerSecond();
+    delay(200);
+    double Meas2 = fs.readMetersPerSecond();
+    delay(200);
+    double Meas3 = fs.readMetersPerSecond();
+    delay(200);
+    double Meas4 = fs.readMetersPerSecond();
+    return (Meas1 + Meas2 + Meas3 + Meas4) / 4;
+}
 
 void hasIntervalElapsed(){
   unsigned long currentMillis = millis();  // Get the current time
@@ -152,10 +231,8 @@ void hasIntervalElapsed(){
   return false;
 }
 
-
-
 void minNumbOfPpl(){
-  return false;
+  return numOfPpl >= PEOPLE_THRESHOLD;
 }
 
 void adsorption() {
@@ -175,7 +252,7 @@ void desorption() {
   digitalWrite(fan1, HIGH);
   digitalWrite(fan2, HIGH);
   digitalWrite(pump1, HIGH);
-  digitalWrite(heat, LOW);
+  digitalWrite(heat, HIGH); //Heating
 }
 
 void restingState(){
@@ -198,11 +275,10 @@ void tcaSelect(uint8_t channel) {
 }
 
 void printTemperature(DeviceAddress deviceAddress) {
-  float tempC = sensors.getTempC(deviceAddress);
-  Serial.print(tempC);
+  Serial.print(getTemperatureC(deviceAddress));
   Serial.print(" ");
   Serial.print("C  |  ");
-  Serial.print(DallasTemperature::toFahrenheit(tempC));
+  Serial.print(getTemperatureF(deviceAddress));
   Serial.print(" ");
   Serial.println("F");
 }
