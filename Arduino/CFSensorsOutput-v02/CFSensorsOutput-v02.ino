@@ -5,6 +5,7 @@
 #include <PID_v1.h>
 #include <Wire.h>
 #include <SparkFun_FS3000_Arduino_Library.h>  //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
+#include <LiquidCrystal.h>
 
 #include "LEDCode.h"
 
@@ -35,6 +36,8 @@ void printTemperature(DeviceAddress);
 float getTemperatureC(DeviceAddress);
 float getTemperatureF(DeviceAddress);
 double getAverageFlow();
+void displayMessagesonLCD(unsigned long, double);
+double getUsersAverageFlow(double);
 
 enum State {
   ADSORPTION,
@@ -45,10 +48,17 @@ enum State {
 State currentState;
 // track number of people blowing
 static int numOfPpl = 0;
-// flow rate threshold
-const int FLOW_THRESHOLD = 5;
+// flow rate threshold for when someone stopped blowing
+const int FLOW_MIN_THRESHOLD = 3;
+// flow rate threshold for it to count as someone blowing
+const int FLOW_MAX_THRESHOLD = 5;
 // number of people blown threshold
 const int PEOPLE_THRESHOLD = 5;
+
+
+// LCD interface pins
+const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 //// Define Pins/Addresses
 #define TCAADDR 0x70  // Multiplexer I2C address
@@ -159,20 +169,25 @@ void loop() {
   switch (currentState) {
     case ADSORPTION:
       adsorption();
-      if(getAvergaeFlow() >= FLOW_THRESHOLD){
+      double currentFlow = getAverageFlow();
+      if(currentFlow >= FLOW_MAX_THRESHOLD){
+        unsigned long flowStartTime = millis();
+        double usersFlowRate = getUsersAverageFlow(currentFlow);
+        unsigned long elapsedTime = millis() - flowStartTime;
+        displayMessagesOnLCD(elapsedTime, usersFlowRate)  // Print all the messages for user on LCD
         numOfPpl++;
         updateLedStrip();
       }
       if (minNumbOfPpl()) {
         currentState = DESORPTION;
-        startTime = millis(); // Start the timer
+        desorptionStartTime = millis(); // Start the timer
         numOfPpl = 0; // Reset count
       }
       break;
       
     case DESORPTION:
       desorption();
-      if (millis() - startTime >= desorptionDuration) {
+      if (millis() - desorptionStartTime >= desorptionDuration) {
         currentState = ADSORPTION;
         updateLedStrip();
       }
@@ -180,6 +195,24 @@ void loop() {
   }
 }
 
+//TODO display messages based on user blowing into tube
+void displayMessagesonLCD(unsigned long elapsedTime, double usersFlowRate){
+  // Carbon Emitted: xxxx kg
+  // Algea Produced: xxxx grams
+  // Cheeseburger
+  // Car Travel Distance
+}
+
+double getUsersAverageFlow(double currentFlow){
+  int numOfFlowReadings = 0;
+  int sumOfFlowReadings = 0;
+  while(currentFlow > FLOW_MIN_THRESHOLD){  //Wait for person to stop blowing
+    sumOfFlowReadings += currentFlow;
+    numOfFlowReadings++;
+    currentFlow = getAverageFlow();
+  }
+  return sumOfFlowReadings / numOfFlowReadings;
+}
 
 void updateLedStrip(){
   int delayTime = 10;
