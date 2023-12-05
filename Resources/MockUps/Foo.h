@@ -27,6 +27,11 @@ namespace vector4 {
   float magnitude(const vec4& v) return sqrt(v.r * v.r + v.g * v.g + v.b * v.b + v.a * v.a);
 }
 
+namespace matrix4 {
+  struct mat4 { vector4::vec4 r1, r2, r3, r4; };
+  vector4::vec4 operator*(const mat4& m, const vector4::vec4& v) return {vector4::dot(m.r1, v), vector4::dot(m.r2, v), vector4::dot(m.r3, v), vector4::dot(m.r4, v)};
+}
+
 // LED CODE
 namespace led {
   // PINS
