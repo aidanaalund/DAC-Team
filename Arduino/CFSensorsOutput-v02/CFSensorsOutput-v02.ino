@@ -25,18 +25,21 @@
 //TODO Make sure good number
 #define APIN 10;
 
+// LCD interface pins
+const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 // Function prototypes
 void adsorption();
 void desorption();
 void restingState();
-boolean hasFiveMinsElapsed()
 boolean minNumbOfPpl();
 void tcaSelect(uint8_t);
 void printTemperature(DeviceAddress);
 float getTemperatureC(DeviceAddress);
 float getTemperatureF(DeviceAddress);
 double getAverageFlow();
-void displayMessagesonLCD(unsigned long, double);
+void displayMessagesOnLCD(unsigned long, double);
 double getUsersAverageFlow(double);
 
 enum State {
@@ -49,16 +52,12 @@ State currentState;
 // track number of people blowing
 static int numOfPpl = 0;
 // flow rate threshold for when someone stopped blowing
-const int FLOW_MIN_THRESHOLD = 3;
+const int FLOW_MIN_THRESHOLD = 2;
 // flow rate threshold for it to count as someone blowing
 const int FLOW_MAX_THRESHOLD = 5;
 // number of people blown threshold
 const int PEOPLE_THRESHOLD = 5;
 
-
-// LCD interface pins
-const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 //// Define Pins/Addresses
 #define TCAADDR 0x70  // Multiplexer I2C address
@@ -80,7 +79,7 @@ double Setpoint, Input, Output;
 PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
 
 // Timer
-unsigned long startTime;
+unsigned long desorptionStartTime;
 const unsigned long desorptionDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // Colors
@@ -108,7 +107,7 @@ void setup() {
     currentState = ADSORPTION;
     currentColor = stage0;
 
-    // Heater Controls
+    // Heater Controls (do this workie??? Who the hell knows)
     Setpoint = 70.0; // set desired temperature
     myPID.SetMode(AUTOMATIC);   
     myPID.SetSampleTime(60000); // 1 minute cycle time
@@ -170,7 +169,7 @@ void loop() {
     case ADSORPTION:
       adsorption();
       double currentFlow = getAverageFlow();
-      if(currentFlow >= FLOW_MAX_THRESHOLD){
+      if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
         unsigned long flowStartTime = millis();
         double usersFlowRate = getUsersAverageFlow(currentFlow);
         unsigned long elapsedTime = millis() - flowStartTime;
@@ -178,7 +177,7 @@ void loop() {
         numOfPpl++;
         updateLedStrip();
       }
-      if (minNumbOfPpl()) {
+      if (minNumbOfPpl()) { // when 5 people have blown
         currentState = DESORPTION;
         desorptionStartTime = millis(); // Start the timer
         numOfPpl = 0; // Reset count
@@ -196,20 +195,24 @@ void loop() {
 }
 
 //TODO display messages based on user blowing into tube
-void displayMessagesonLCD(unsigned long elapsedTime, double usersFlowRate){
+void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
+  // Jacob moment
+  // Use elapsed time and usersFlowRate to calculate the carbon emitted by the user in kg
+  // Display the following things:
   // Carbon Emitted: xxxx kg
   // Algea Produced: xxxx grams
-  // Cheeseburger
-  // Car Travel Distance
+  // Cheeseburger ?
+  // Car Travel Distance ?
 }
 
 double getUsersAverageFlow(double currentFlow){
   int numOfFlowReadings = 0;
   int sumOfFlowReadings = 0;
-  while(currentFlow > FLOW_MIN_THRESHOLD){  //Wait for person to stop blowing
+  while(currentFlow > FLOW_MIN_THRESHOLD){  //Wait for person to stop blowing (or a timer or something)
     sumOfFlowReadings += currentFlow;
     numOfFlowReadings++;
     currentFlow = getAverageFlow();
+    // Add extra delay if needed
   }
   return sumOfFlowReadings / numOfFlowReadings;
 }
@@ -264,7 +267,7 @@ void hasIntervalElapsed(){
   return false;
 }
 
-void minNumbOfPpl(){
+boolean minNumbOfPpl(){
   return numOfPpl >= PEOPLE_THRESHOLD;
 }
 
