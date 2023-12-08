@@ -206,10 +206,9 @@ void setup() {
 
     void loop() {
       if(minNumbOfPpl() /* ||  20 minutes passed*/){
-        bool done = false;
-        // use a do while instead
-        while(!done){
-          done = heating();
+        desorption();
+        } else {
+          absorption();
         }
         done = false;
         while (!done){
@@ -245,10 +244,7 @@ boolean minNumbOfPpl(){
       return true;
     }
 
-    // TODO:
-    boolean heating() {
-      return true;
-    }
+    
     // TODO:
     // return true when 5 min passed. Use millis
     boolean desorption() {
@@ -262,10 +258,6 @@ boolean minNumbOfPpl(){
         return false;
       }
       return true;
-    }
-    // TODO:
-    boolean cooling(){
-      return true:
     }
 
     // TODO:
