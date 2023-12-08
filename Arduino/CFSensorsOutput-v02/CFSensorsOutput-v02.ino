@@ -6,24 +6,27 @@
 #include <Wire.h>
 #include <SparkFun_FS3000_Arduino_Library.h>  //Click here to get the library: http://librarymanager/All#SparkFun_FS3000
 #include <LiquidCrystal.h>
-
 #include "LEDCode.h"
 
-// pin numbers for outputs
-#define valve1 2;    // top valve
-#define valve2 3;    // bottom valve
-#define valve3 4;    // to algae
-#define fan1 5;    // top fan
-#define fan2 6;    // fan 2 (to algae feeder & vacuum pump)
-#define pump1 7;    // vacuum pump
-#define heat 8;  // heat
+//// Define Pins/Addresses
+#define TCAADDR 0x70
+// TODO set pin number
+#define ONE_WIRE_BUS 13
 
-// LED light pins
-#define RPIN 13;
-#define GPIN 12;
-#define BPIN 11;
+const int RPIN = 13;
+const int GPIN = 12;
+const int BPIN = 11;
 //TODO Make sure good number
-#define APIN 10;
+const int APIN = 10;
+
+// pin numbers for outputs
+const int valve1 = 2;
+const int valve2 = 3;
+const int valve3 = 4;
+const int fan1 = 5;
+const int fan2 = 6;
+const int pump1 = 7;
+const int heat = 8;
 
 // LCD interface pins
 const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
@@ -33,7 +36,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 void adsorption();
 void desorption();
 void restingState();
-boolean minNumbOfPpl();
+bool minNumbOfPpl();
 void tcaSelect(uint8_t);
 void printTemperature(DeviceAddress);
 float getTemperatureC(DeviceAddress);
@@ -44,25 +47,19 @@ double getUsersAverageFlow(double);
 
 enum State {
   ADSORPTION,
-  DESORPTION,
+  DESORPTION
 };
 
 // track state of the machine
-State currentState;
+int currentState;
 // track number of people blowing
 static int numOfPpl = 0;
 // flow rate threshold for when someone stopped blowing
 const int FLOW_MIN_THRESHOLD = 2;
 // flow rate threshold for it to count as someone blowing
-const int FLOW_MAX_THRESHOLD = 5;
+const int FLOW_MAX_THRESHOLD = 2;
 // number of people blown threshold
 const int PEOPLE_THRESHOLD = 5;
-
-
-//// Define Pins/Addresses
-#define TCAADDR 0x70  // Multiplexer I2C address
-// TODO set pin number
-#define ONE_WIRE_BUS  // Temperature probes data pin
 
 OneWire oneWire(ONE_WIRE_BUS);        // initialize oneWire instance
 DallasTemperature sensors(&oneWire);  // pass oneWire reference to DallasTemperature
@@ -80,7 +77,7 @@ PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
 
 // Timer
 unsigned long desorptionStartTime;
-const unsigned long desorptionDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+const unsigned long desorptionDuration = 300000; // 5 minutes in milliseconds
 
 // Colors
 uint8_t* currentColor;
@@ -90,7 +87,7 @@ uint8_t stage1[] = {255, 206, 3, 255};
 uint8_t stage2[] = {253, 154, 1, 255};
 uint8_t stage3[] = {253, 97, 4, 255};
 uint8_t stage4[] = {255, 44, 5, 255};
-uint8_t stage5[] = {240, 5, 5, 255}
+uint8_t stage5[] = {240, 5, 5, 255};
 
 
 void setup() {
@@ -161,35 +158,43 @@ void setup() {
     Serial.println("Sensor is connected properly.");
 
     // LED init
-    LEDSetup(RPIN, GPIN, BPIN /*, APIN*/); // uncomment if using waterproof strip
+    LEDSetup(RPIN, GPIN, BPIN, APIN, true); // uncomment if using waterproof strip
 }
 
 void loop() {
+  double currentFlow;
   switch (currentState) {
     case ADSORPTION:
       adsorption();
-      double currentFlow = getAverageFlow();
+      currentFlow = getAverageFlow();
       if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
+        Serial.println("Someone Blew!!!");
         unsigned long flowStartTime = millis();
         double usersFlowRate = getUsersAverageFlow(currentFlow);
         unsigned long elapsedTime = millis() - flowStartTime;
-        displayMessagesOnLCD(elapsedTime, usersFlowRate)  // Print all the messages for user on LCD
+        Serial.println("They blew for " + elapsedTime);
+        displayMessagesOnLCD(elapsedTime, usersFlowRate);  // Print all the messages for user on LCD
         numOfPpl++;
+        Serial.println((String)numOfPpl + " have blown");
         updateLedStrip();
       }
       if (minNumbOfPpl()) { // when 5 people have blown
+        Serial.println("5 people blew!");
         currentState = DESORPTION;
         desorptionStartTime = millis(); // Start the timer
         numOfPpl = 0; // Reset count
       }
-      break;
-      
+      break;   
     case DESORPTION:
+      
       desorption();
       if (millis() - desorptionStartTime >= desorptionDuration) {
+        Serial.println("Exiting Desorption!");
         currentState = ADSORPTION;
         updateLedStrip();
       }
+      break;
+    default:
       break;
   }
 }
@@ -243,31 +248,25 @@ void updateLedStrip(){
       newColor = stage0;
       break;
   }
-  LEDTransition(currentColor, newColor, steps, delayTime)
+  LEDTransition(currentColor, newColor, steps, delayTime);
   currentColor = newColor;
 }
 
 double getAverageFlow(){
-    double Meas1 = fs.readMetersPerSecond();
-    delay(200);
-    double Meas2 = fs.readMetersPerSecond();
-    delay(200);
-    double Meas3 = fs.readMetersPerSecond();
-    delay(200);
-    double Meas4 = fs.readMetersPerSecond();
-    return (Meas1 + Meas2 + Meas3 + Meas4) / 4;
+  tcaSelect(2);
+  double Meas1 = flowSensor.readMetersPerSecond();
+  delay(200);
+  double Meas2 = flowSensor.readMetersPerSecond();
+  delay(200);
+  double Meas3 = flowSensor.readMetersPerSecond();
+  delay(200);
+  double Meas4 = flowSensor.readMetersPerSecond();
+  double mean = (Meas1 + Meas2 + Meas3 + Meas4) / 4;
+  Serial.println("Flow: " + (String)mean);
+  return mean;
 }
 
-void hasIntervalElapsed(){
-  unsigned long currentMillis = millis();  // Get the current time
-  if (currentMillis - previousMillis >= INTERVAL){
-    previousMillis = currentMillis;
-    return true;
-  }
-  return false;
-}
-
-boolean minNumbOfPpl(){
+bool minNumbOfPpl(){
   return numOfPpl >= PEOPLE_THRESHOLD;
 }
 
@@ -325,5 +324,5 @@ float getTemperatureC(DeviceAddress deviceAddress){
 
 float getTemperatureF(DeviceAddress deviceAddress){
   float tempC = sensors.getTempC(deviceAddress);
-  return DallasTemperature::toFahrenheit(tempC));
+  return DallasTemperature::toFahrenheit(tempC);
 }

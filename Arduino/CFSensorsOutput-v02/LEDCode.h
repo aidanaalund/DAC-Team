@@ -13,12 +13,12 @@ static uint8_t ALPHAPIN = 0;
 static bool LIGHTS_ON = false;
 
 // call this in setup - preferably choose PWM capable pins so we don't burn things up
-void LEDSetup(int rpin, int gpin, int bpin /*, int apin*/, bool LIGHTS_ON) { // uncomment on waterproof led use
+void LEDSetup(int rpin, int gpin, int bpin , int apin, bool lights) { // uncomment on waterproof led use
   REDPIN = rpin;
-  GREEPIN = gpin;
+  GREENPIN = gpin;
   BLUEPIN = bpin;
   //ALPHAPIN = apin;
-  LIGHTS_ON = lights
+  LIGHTS_ON = lights;
 
   pinMode(REDPIN, OUTPUT);
   pinMode(GREENPIN, OUTPUT);
@@ -53,5 +53,3 @@ void LEDTransition(uint8_t prevColor[], uint8_t newColor[], int steps, int delay
     delay(delayTime);
   }
 }
-
-void LEDTransition
