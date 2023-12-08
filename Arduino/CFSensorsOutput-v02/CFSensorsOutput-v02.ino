@@ -32,6 +32,17 @@ const int heat = 8;
 const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+const int num_messages = 2;
+
+String messages[num_messages][num_messages] = {
+  {"Carbon Emitted: ", "1000 kg"},
+  {"Algae Produced: ", "20 grams"}
+};
+
+int currentMessage = 0;
+String space = "                "; // 16 spaces to fill the LCD screen
+String scrollMessageTop, scrollMessageBottom;
+
 // Function prototypes
 void adsorption();
 void desorption();
@@ -159,6 +170,9 @@ void setup() {
 
     // LED init
     LEDSetup(RPIN, GPIN, BPIN, APIN, true); // uncomment if using waterproof strip
+
+    //LCD Setup
+    lcd.begin(16, 2);
 }
 
 void loop() {
@@ -168,11 +182,9 @@ void loop() {
       adsorption();
       currentFlow = getAverageFlow();
       if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
-        Serial.println("Someone Blew!!!");
         unsigned long flowStartTime = millis();
         double usersFlowRate = getUsersAverageFlow(currentFlow);
         unsigned long elapsedTime = millis() - flowStartTime;
-        Serial.println("They blew for " + elapsedTime);
         displayMessagesOnLCD(elapsedTime, usersFlowRate);  // Print all the messages for user on LCD
         numOfPpl++;
         Serial.println((String)numOfPpl + " have blown");
@@ -201,13 +213,29 @@ void loop() {
 
 //TODO display messages based on user blowing into tube
 void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
-  // Jacob moment
-  // Use elapsed time and usersFlowRate to calculate the carbon emitted by the user in kg
-  // Display the following things:
-  // Carbon Emitted: xxxx kg
-  // Algea Produced: xxxx grams
-  // Cheeseburger ?
-  // Car Travel Distance ?
+  messages[0][1] = "testcarbon";  //Calculate Carbon Emitted
+  messages[1][1] = "testalgea";  //Calculate algea produced
+  scrollMessageTop = messages[currentMessage][0] + space;
+  scrollMessageBottom = messages[currentMessage][1] + space;
+  while(currentMessage < num_messages){
+    for (int i = 0; i < scrollMessageTop.length() - 16; i++) {
+    lcd.clear(); // Clear the display
+    // Display a portion of the top message
+    lcd.setCursor(0, 0);
+    lcd.print(scrollMessageTop.substring(i, i + 16));
+    // Display a portion of the bottom message
+    lcd.setCursor(0, 1);
+    lcd.print(scrollMessageBottom.substring(i, i + 16));
+    if (i == 0) {
+      delay(3000); // Pause for 5 seconds when the full message is displayed
+    } else {
+      delay(300); // Adjust delay for scrolling speed
+    }
+  }
+  // Change to the next message set
+  currentMessage += 1;
+  }
+  currentMessage = 0;
 }
 
 double getUsersAverageFlow(double currentFlow){
