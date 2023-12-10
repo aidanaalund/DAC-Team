@@ -10,13 +10,11 @@
 
 //// Define Pins/Addresses
 #define TCAADDR 0x70
-// TODO set pin number
 #define ONE_WIRE_BUS 13
 
 const int RPIN = 13;
-const int GPIN = 12;
-const int BPIN = 11;
-//TODO Make sure good number
+const int GPIN = 11;
+const int BPIN = 12;
 const int APIN = 10;
 
 // pin numbers for outputs
@@ -68,7 +66,7 @@ static int numOfPpl = 0;
 // flow rate threshold for when someone stopped blowing
 const int FLOW_MIN_THRESHOLD = 2;
 // flow rate threshold for it to count as someone blowing
-const int FLOW_MAX_THRESHOLD = 2;
+const int FLOW_MAX_THRESHOLD = 1;
 // number of people blown threshold
 const int PEOPLE_THRESHOLD = 5;
 
@@ -93,12 +91,13 @@ const unsigned long desorptionDuration = 300000; // 5 minutes in milliseconds
 // Colors
 uint8_t* currentColor;
 uint8_t* newColor;
-uint8_t stage0[] = {254, 240, 1, 255};
-uint8_t stage1[] = {255, 206, 3, 255};
-uint8_t stage2[] = {253, 154, 1, 255};
-uint8_t stage3[] = {253, 97, 4, 255};
-uint8_t stage4[] = {255, 44, 5, 255};
-uint8_t stage5[] = {240, 5, 5, 255};
+//TODO Make these colors nicer
+uint8_t stage0[] = {254, 240, 1, 0};
+uint8_t stage1[] = {255, 206, 3, 0};
+uint8_t stage2[] = {253, 154, 1, 0};
+uint8_t stage3[] = {253, 97, 4, 0};
+uint8_t stage4[] = {255, 44, 5, 0};
+uint8_t stage5[] = {240, 5, 5, 0};
 
 
 void setup() {
@@ -131,7 +130,7 @@ void setup() {
     Wire.begin();
 
     // INLET SETUP
-    tcaSelect(4);            // TCA channel for bme1
+    tcaSelect(1);            // TCA channel for bme1
     if (!scd30_1.begin()) {  // Try to initialize!
       Serial.println("Failed to find SCD30 #1 chip");
       while (1) {
@@ -170,7 +169,8 @@ void setup() {
 
     // LED init
     LEDSetup(RPIN, GPIN, BPIN, APIN, true); // uncomment if using waterproof strip
-
+    updateLedStrip();
+    
     //LCD Setup
     lcd.begin(16, 2);
 }
@@ -215,9 +215,10 @@ void loop() {
 void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
   messages[0][1] = "testcarbon";  //Calculate Carbon Emitted
   messages[1][1] = "testalgea";  //Calculate algea produced
-  scrollMessageTop = messages[currentMessage][0] + space;
-  scrollMessageBottom = messages[currentMessage][1] + space;
+
   while(currentMessage < num_messages){
+    scrollMessageTop = messages[currentMessage][0] + space;
+    scrollMessageBottom = messages[currentMessage][1] + space;
     for (int i = 0; i < scrollMessageTop.length() - 16; i++) {
     lcd.clear(); // Clear the display
     // Display a portion of the top message
