@@ -9,6 +9,7 @@
 #include "LEDCode.h"
 
 
+
 //// Define Pins/Addresses
 #define TCAADDR 0x70
 #define ONE_WIRE_BUS 13
@@ -54,6 +55,8 @@ float getTemperatureF(DeviceAddress);
 double getAverageFlow();
 void displayMessagesOnLCD(unsigned long, double);
 double getUsersAverageFlow(double);
+void displayTimeLeftOnLCD(unsigned long);
+void updateLedStrip();
 
 enum State {
   ADSORPTION,
@@ -69,7 +72,7 @@ const int FLOW_MIN_THRESHOLD = 2;
 // flow rate threshold for it to count as someone blowing
 const int FLOW_MAX_THRESHOLD = 1;
 // number of people blown threshold
-const int PEOPLE_THRESHOLD = 5;
+const int PEOPLE_THRESHOLD = 2;
 
 OneWire oneWire(ONE_WIRE_BUS);        // initialize oneWire instance
 DallasTemperature sensors(&oneWire);  // pass oneWire reference to DallasTemperature
@@ -178,6 +181,7 @@ void setup() {
 
 void loop() {
   double currentFlow;
+  unsigned long desorptionTimeLeft;
   switch (currentState) {
     case ADSORPTION:
       adsorption();
@@ -199,8 +203,13 @@ void loop() {
       }
       break;   
     case DESORPTION:
-      
       desorption();
+      currentFlow = getAverageFlow();
+      if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
+        desorptionTimeLeft = desorptionDuration - (millis() - desorptionStartTime);
+        desorptionTimeLeft = desorptionTimeLeft/1000;
+        displayTimeLeftOnLCD(desorptionTimeLeft / 60, desorptionTimeLeft % 60);  // Print time left on LCD
+      }
       if (millis() - desorptionStartTime >= desorptionDuration) {
         Serial.println("Exiting Desorption!");
         currentState = ADSORPTION;
@@ -212,9 +221,14 @@ void loop() {
   }
 }
 
-//TODO display messages based on user blowing into tube
 void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
-  messages[0][1] = "testcarbon";  //Calculate Carbon Emitted
+  if (! ( elapsedTime == 0 || isnan(elapsedTime) || usersFlowRate == 0 || isnan(usersFlowRate) ) ){
+    float tubeArea = 0.00064516;
+  float densityCO2 = 1977;
+  float breathConc = .04; //Optimally tracked by CO2 sensor instead of hard coded
+  float carbonEmitted = (elapsedTime/1000)*usersFlowRate*tubeArea*densityCO2*breathConc;
+  carbonEmitted = round(carbonEmitted * 100.0) / 100.0;
+  messages[0][1] = (String)carbonEmitted + " grams";
   messages[1][1] = "testalgea";  //Calculate algea produced
 
   while(currentMessage < num_messages){
@@ -229,7 +243,7 @@ void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
     lcd.setCursor(0, 1);
     lcd.print(scrollMessageBottom.substring(i, i + 16));
     if (i == 0) {
-      delay(3000); // Pause for 5 seconds when the full message is displayed
+      delay(5000); // Pause for 3 seconds when the full message is displayed
     } else {
       delay(300); // Adjust delay for scrolling speed
     }
@@ -238,11 +252,31 @@ void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
   currentMessage += 1;
   }
   currentMessage = 0;
+  } 
+}
+
+void displayTimeLeftOnLCD(unsigned int minutesLeft, unsigned int secondsLeft){
+  scrollMessageTop = "Desorbing, wait" + space;
+  scrollMessageBottom = (String)minutesLeft + ":" + (String)secondsLeft + " minutes" + space;
+  for (int i = 0; i <= scrollMessageTop.length() - 16; i++) {
+    lcd.clear(); // Clear the display
+    // Display a portion of the top message
+    lcd.setCursor(0, 0);
+    lcd.print(scrollMessageTop.substring(i, i + 16));
+    // Display a portion of the bottom message
+    lcd.setCursor(0, 1);
+    lcd.print(scrollMessageBottom.substring(i, i + 16));
+    if (i == 0) {
+      delay(5000); // Pause for 3 seconds when the full message is displayed
+    } else {
+      delay(300); // Adjust delay for scrolling speed
+    }
+  }
 }
 
 double getUsersAverageFlow(double currentFlow){
-  int numOfFlowReadings = 0;
-  int sumOfFlowReadings = 0;
+  double numOfFlowReadings = 0;
+  double sumOfFlowReadings = 0;
   while(currentFlow > FLOW_MIN_THRESHOLD){  //Wait for person to stop blowing (or a timer or something)
     sumOfFlowReadings += currentFlow;
     numOfFlowReadings++;
@@ -317,6 +351,7 @@ void desorption() {
   digitalWrite(fan1, HIGH);
   digitalWrite(fan2, HIGH);
   digitalWrite(pump1, HIGH);
+  analogWrite(pump1, 175);
   digitalWrite(heat, HIGH); //Heating
 }
 
