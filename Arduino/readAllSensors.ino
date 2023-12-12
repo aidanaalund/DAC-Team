@@ -128,6 +128,7 @@ void loop()
     Serial.println("");
   }
 
+
   // OUTLET
   tcaselect(7);
   if (scd30_2.dataReady())

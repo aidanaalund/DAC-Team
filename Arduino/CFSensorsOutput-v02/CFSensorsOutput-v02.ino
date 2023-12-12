@@ -135,7 +135,7 @@ void setup() {
 
     // INLET SETUP
     tcaSelect(1);            // TCA channel for bme1
-    if (!scd30_1.begin()) {  // Try to initialize!
+    if (!scd30_1.begin()) {
       Serial.println("Failed to find SCD30 #1 chip");
       while (1) {
         delay(10);
@@ -147,7 +147,7 @@ void setup() {
 
     // OUTLET SETUP
     tcaSelect(7);            // TCA channel for bme1
-    if (!scd30_2.begin()) {  // Try to initialize!
+    if (!scd30_2.begin()) {
       Serial.println("Failed to find SCD30 #2 chip");
       while (1) {
         delay(10);
@@ -164,15 +164,13 @@ void setup() {
       while (1);  // Freeze
     }
 
-    // Set the range to match which version of the sensor you are using.
-    // FS3000-1005 (0-7.23 m/sec) --->>>  AIRFLOW_RANGE_7_MPS
-    // FS3000-1015 (0-15 m/sec)   --->>>  AIRFLOW_RANGE_15_MPS
+    // Set the range FS3000-1005 (0-7.23 m/sec) --->>>  AIRFLOW_RANGE_7_MPS
     flowSensor.setRange(AIRFLOW_RANGE_7_MPS);
 
     Serial.println("Sensor is connected properly.");
 
     // LED init
-    LEDSetup(RPIN, GPIN, BPIN, APIN, true); // uncomment if using waterproof strip
+    LEDSetup(RPIN, GPIN, BPIN, APIN, true);
     updateLedStrip();
     
     //LCD Setup
@@ -204,11 +202,19 @@ void loop() {
       break;   
     case DESORPTION:
       desorption();
+      Serial.println("TEMPERATURES");
+      sensors.requestTemperatures();
+      Serial.print("Sensor 1: ");
+      printTemperature(sensor1);
+      Serial.print("Sensor 2: ");
+      printTemperature(sensor2);
+      Serial.print("Sensor 3: ");
+      printTemperature(sensor3);
       currentFlow = getAverageFlow();
-      if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
+      if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows during desorption
         desorptionTimeLeft = desorptionDuration - (millis() - desorptionStartTime);
         desorptionTimeLeft = desorptionTimeLeft/1000;
-        displayTimeLeftOnLCD(desorptionTimeLeft / 60, desorptionTimeLeft % 60);  // Print time left on LCD
+        displayTimeLeftOnLCD(desorptionTimeLeft / 60, desorptionTimeLeft % 60);  // Print desorption time left on LCD
       }
       if (millis() - desorptionStartTime >= desorptionDuration) {
         Serial.println("Exiting Desorption!");
@@ -225,7 +231,8 @@ void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
   if (! ( elapsedTime == 0 || isnan(elapsedTime) || usersFlowRate == 0 || isnan(usersFlowRate) ) ){
     float tubeArea = 0.00064516;
   float densityCO2 = 1977;
-  float breathConc = .04; //Optimally tracked by CO2 sensor instead of hard coded
+  tcaselect(4);
+  float breathConc = scd30_1.dataReady && scd30_1.read() ? scd30_1.CO2 : .04;
   float carbonEmitted = (elapsedTime/1000)*usersFlowRate*tubeArea*densityCO2*breathConc;
   carbonEmitted = round(carbonEmitted * 100.0) / 100.0;
   messages[0][1] = (String)carbonEmitted + " grams";
