@@ -28,6 +28,24 @@ const int fan2 = 6;
 const int pump1 = 7;
 const int heat = 8;
 
+OneWire oneWire(ONE_WIRE_BUS);        // initialize oneWire instance
+DallasTemperature sensors(&oneWire);  // pass oneWire reference to DallasTemperature
+
+Adafruit_SCD30 scd30_1;  // Define each CO2 sensor
+Adafruit_SCD30 scd30_2;
+FS3000 flowSensor;  //Define FlowSensor
+uint8_t sensor1[8] = { 0x28, 0x66, 0x99, 0x94, 0x97, 0xFF, 0x03, 0xF5 };  // Addresses of 3 DS18B20s
+uint8_t sensor2[8] = { 0x28, 0xF9, 0x29, 0x94, 0x97, 0x0F, 0x03, 0xB6 };
+uint8_t sensor3[8] = { 0x28, 0x3A, 0x5F, 0x94, 0x97, 0x03, 0x03, 0xCC };
+
+// Heater PID Settings
+double Setpoint, Input, Output;
+PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
+
+// LCD interface pins
+const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 // Function prototypes
 void adsorption();
 void desorption();
@@ -49,23 +67,6 @@ enum State {
   DESORPTION
 };
 
-OneWire oneWire(ONE_WIRE_BUS);        // initialize oneWire instance
-DallasTemperature sensors(&oneWire);  // pass oneWire reference to DallasTemperature
-
-Adafruit_SCD30 scd30_1;  // Define each CO2 sensor
-Adafruit_SCD30 scd30_2;
-FS3000 flowSensor;  //Define FlowSensor
-uint8_t sensor1[8] = { 0x28, 0x66, 0x99, 0x94, 0x97, 0xFF, 0x03, 0xF5 };  // Addresses of 3 DS18B20s
-uint8_t sensor2[8] = { 0x28, 0xF9, 0x29, 0x94, 0x97, 0x0F, 0x03, 0xB6 };
-uint8_t sensor3[8] = { 0x28, 0x3A, 0x5F, 0x94, 0x97, 0x03, 0x03, 0xCC };
-
-// Heater PID Settings
-double Setpoint, Input, Output;
-PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
-
-// LCD interface pins
-const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 // Vars for LCD message display
 String space = "                "; // 16 spaces to fill the LCD screen
 String scrollMessageTop, scrollMessageBottom;
@@ -95,7 +96,6 @@ uint8_t stage2[] = {253, 154, 1, 0};
 uint8_t stage3[] = {253, 97, 4, 0};
 uint8_t stage4[] = {255, 44, 5, 0};
 uint8_t stage5[] = {240, 5, 5, 0};
-
 
 void setup() {
     // Set the pin modes for the electrical devices
@@ -379,4 +379,3 @@ float getTemperatureF(DeviceAddress deviceAddress){
   float tempC = sensors.getTempC(deviceAddress);
   return DallasTemperature::toFahrenheit(tempC);
 }
-
