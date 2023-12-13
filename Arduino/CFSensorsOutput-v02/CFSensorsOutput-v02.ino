@@ -11,7 +11,7 @@
 
 //// Define Pins/Addresses
 #define TCAADDR 0x70
-#define ONE_WIRE_BUS 13
+#define ONE_WIRE_BUS A1
 
 // pins for RGB
 const int RPIN = 13;
@@ -53,12 +53,13 @@ void restingState();
 bool minNumbOfPpl();
 void updateLedStrip();
 void tcaSelect(uint8_t);
+double getUsersMaxCO2();
 double getAverageFlow();
 double getUsersAverageFlow(double);
 void printTemperature(DeviceAddress);
 float getTemperatureC(DeviceAddress);
 float getTemperatureF(DeviceAddress);
-void displayMessage(String, String);
+void displayMessage(String, String, int);
 void displayTimeLeftOnLCD(unsigned long);
 void displayUserBlowMessagesOnLCD(unsigned long, double);
 
@@ -80,7 +81,7 @@ const int FLOW_MIN_THRESHOLD = 2;
 // flow rate threshold for it to count as someone blowing
 const int FLOW_MAX_THRESHOLD = 1;
 // number of people blown threshold
-const int PEOPLE_THRESHOLD = 2;
+const int PEOPLE_THRESHOLD = 5;
 
 // Timer
 unsigned long desorptionStartTime;
@@ -178,10 +179,12 @@ void loop() {
       adsorption();
       currentFlow = getAverageFlow();
       if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
+        digitalWrite(fan1, LOW);  //Comment this if you don't want fan to stop when user blows
         unsigned long flowStartTime = millis();
         double usersFlowRate = getUsersAverageFlow(currentFlow);
         unsigned long elapsedTime = millis() - flowStartTime;
         displayUserBlowMessagesOnLCD(elapsedTime, usersFlowRate);  // Print all the messages for user on LCD
+        digitalWrite(fan1, HIGH); //Comment this if you don't want fan to stop when user blows
         numOfPpl++;
         Serial.println((String)numOfPpl + " have blown");
         updateLedStrip();
@@ -197,8 +200,6 @@ void loop() {
       desorption();
       Serial.println("TEMPERATURES");
       sensors.requestTemperatures();
-      Serial.print("Sensor 1: ");
-      printTemperature(sensor1);
       Serial.print("Sensor 2: ");
       printTemperature(sensor2);
       Serial.print("Sensor 3: ");
@@ -219,31 +220,63 @@ void loop() {
   }
 }
 
+double getUsersMaxCO2(){
+  tcaSelect(1);
+  double highestFlow = 20000.0/1000000.0;
+  double breathConc;
+  for(int i = 0; i < 12; i++){
+    if(scd30_1.dataReady() && scd30_1.read()){
+      breathConc = scd30_1.CO2/1000000.0;
+      Serial.println(scd30_1.CO2);
+      Serial.println(breathConc);
+      if(breathConc > highestFlow){
+        highestFlow = breathConc;
+        Serial.println("New Highest: " + (String)highestFlow);
+      }
+    }
+    randomSeed(analogRead(0));
+    int randomNumber = random(1, 11);
+    if(i == 10 && randomNumber == 10){
+      displayMessage("Still working", "on the CO2 ;)", 1000);//Delay of like 5 seconds and some
+    }
+    else{
+      displayMessage("Calculating CO2", "Produced...", 1000);//Delay of like 5 seconds and some
+    }
+  }
+  return highestFlow;
+}
+
 void displayUserBlowMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
   if (elapsedTime == 0 || isnan(elapsedTime) || usersFlowRate == 0 || isnan(usersFlowRate)){  //Invalid values
     return;
   }
-  tcaselect(4);
-  float breathConc = scd30_1.dataReady && scd30_1.read() ? scd30_1.CO2 : .04;
+  double breathConc = getUsersMaxCO2();
+//  double breathConc = 0.04;
   float tubeArea = 0.00064516;
   float densityCO2 = 1977;
   float carbonEmitted = (elapsedTime/1000)*usersFlowRate*tubeArea*densityCO2*breathConc;
   carbonEmitted = round(carbonEmitted * 100.0) / 100.0;
   String topMessage = "Carbon Emitted: ";
   String bottomMessage = (String)carbonEmitted + " grams";
-  displayMessage(topMessage, bottomMessage);
+  displayMessage(topMessage, bottomMessage, 5000);
+
+//  Example of how this works (luv u bb - julian)
+//  topMessage = "Algea Produced: ";
+//  bottomMessage = "testalgea";
+//  int delayTime = 5000; //5 seconds
+//  displayMessage(topMessage, bottomMessage, delayTime);
 }
 
 void displayTimeLeftOnLCD(unsigned long desorptionTimeLeft){
   unsigned long desorptionTimeLeftSeconds = desorptionTimeLeft/1000;
   unsigned int minutesLeft = desorptionTimeLeftSeconds / 60;
   unsigned int secondsLeft = desorptionTimeLeftSeconds % 60;
-  topMessage = "Desorbing, wait" + space;
-  bottomMessage = (String)minutesLeft + ":" + (String)secondsLeft + " minutes" + space;
-  displayMessage(topMessage, bottomMessage);
+  String topMessage = "Desorbing, wait" + space;
+  String bottomMessage = (String)minutesLeft + ":" + (String)secondsLeft + " minutes" + space;
+  displayMessage(topMessage, bottomMessage, 5000);
 }
 
-void displayMessage(String topMessage, String bottomMessage){
+void displayMessage(String topMessage, String bottomMessage, int delayTime){
   scrollMessageTop = topMessage + space;
   scrollMessageBottom = bottomMessage + space;
   for (int i = 0; i <= scrollMessageTop.length() - 16; i++) {
@@ -255,7 +288,7 @@ void displayMessage(String topMessage, String bottomMessage){
     lcd.setCursor(0, 1);
     lcd.print(scrollMessageBottom.substring(i, i + 16));
     if (i == 0) {
-      delay(5000); // Pause for 3 seconds when the full message is displayed
+      delay(delayTime); // Pause for 3 seconds when the full message is displayed
     } else {
       delay(300); // Adjust delay for scrolling speed
     }
