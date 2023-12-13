@@ -179,12 +179,12 @@ void loop() {
       adsorption();
       currentFlow = getAverageFlow();
       if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows
-        digitalWrite(fan1, LOW);  //Comment this if you don't want fan to stop when user blows
+//        digitalWrite(fan1, LOW);  //Comment this if you don't want fan to stop when user blows
         unsigned long flowStartTime = millis();
         double usersFlowRate = getUsersAverageFlow(currentFlow);
         unsigned long elapsedTime = millis() - flowStartTime;
         displayUserBlowMessagesOnLCD(elapsedTime, usersFlowRate);  // Print all the messages for user on LCD
-        digitalWrite(fan1, HIGH); //Comment this if you don't want fan to stop when user blows
+//        digitalWrite(fan1, HIGH); //Comment this if you don't want fan to stop when user blows
         numOfPpl++;
         Serial.println((String)numOfPpl + " have blown");
         updateLedStrip();
@@ -224,7 +224,8 @@ double getUsersMaxCO2(){
   tcaSelect(1);
   double highestFlow = 20000.0/1000000.0;
   double breathConc;
-  for(int i = 0; i < 12; i++){
+  double maxI = 12; // Number of times loop should run. maxI * 5 = seconds to measure CO2
+  for(int i = 0; i < maxI; i++){
     if(scd30_1.dataReady() && scd30_1.read()){
       breathConc = scd30_1.CO2/1000000.0;
       Serial.println(scd30_1.CO2);
@@ -236,7 +237,7 @@ double getUsersMaxCO2(){
     }
     randomSeed(analogRead(0));
     int randomNumber = random(1, 11);
-    if(i == 10 && randomNumber == 10){
+    if(i == maxI - 2 && randomNumber == 10){
       displayMessage("Still working", "on the CO2 ;)", 1000);//Delay of like 5 seconds and some
     }
     else{
@@ -250,8 +251,8 @@ void displayUserBlowMessagesOnLCD(unsigned long elapsedTime, double usersFlowRat
   if (elapsedTime == 0 || isnan(elapsedTime) || usersFlowRate == 0 || isnan(usersFlowRate)){  //Invalid values
     return;
   }
-  double breathConc = getUsersMaxCO2();
-//  double breathConc = 0.04;
+//  double breathConc = getUsersMaxCO2();
+  double breathConc = 0.04;
   float tubeArea = 0.00064516;
   float densityCO2 = 1977;
   float carbonEmitted = (elapsedTime/1000)*usersFlowRate*tubeArea*densityCO2*breathConc;
