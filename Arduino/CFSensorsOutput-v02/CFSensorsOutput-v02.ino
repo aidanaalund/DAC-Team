@@ -9,11 +9,11 @@
 #include "LEDCode.h"
 
 
-
 //// Define Pins/Addresses
 #define TCAADDR 0x70
 #define ONE_WIRE_BUS 13
 
+// pins for RGB
 const int RPIN = 13;
 const int GPIN = 11;
 const int BPIN = 12;
@@ -28,51 +28,26 @@ const int fan2 = 6;
 const int pump1 = 7;
 const int heat = 8;
 
-// LCD interface pins
-const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-
-const int num_messages = 2;
-
-String messages[num_messages][num_messages] = {
-  {"Carbon Emitted: ", "1000 kg"},
-  {"Algae Produced: ", "20 grams"}
-};
-
-int currentMessage = 0;
-String space = "                "; // 16 spaces to fill the LCD screen
-String scrollMessageTop, scrollMessageBottom;
-
 // Function prototypes
 void adsorption();
 void desorption();
 void restingState();
 bool minNumbOfPpl();
+void updateLedStrip();
 void tcaSelect(uint8_t);
+double getAverageFlow();
+double getUsersAverageFlow(double);
 void printTemperature(DeviceAddress);
 float getTemperatureC(DeviceAddress);
 float getTemperatureF(DeviceAddress);
-double getAverageFlow();
-void displayMessagesOnLCD(unsigned long, double);
-double getUsersAverageFlow(double);
+void displayMessage(String, String);
 void displayTimeLeftOnLCD(unsigned long);
-void updateLedStrip();
+void displayUserBlowMessagesOnLCD(unsigned long, double);
 
 enum State {
   ADSORPTION,
   DESORPTION
 };
-
-// track state of the machine
-int currentState;
-// track number of people blowing
-static int numOfPpl = 0;
-// flow rate threshold for when someone stopped blowing
-const int FLOW_MIN_THRESHOLD = 2;
-// flow rate threshold for it to count as someone blowing
-const int FLOW_MAX_THRESHOLD = 1;
-// number of people blown threshold
-const int PEOPLE_THRESHOLD = 2;
 
 OneWire oneWire(ONE_WIRE_BUS);        // initialize oneWire instance
 DallasTemperature sensors(&oneWire);  // pass oneWire reference to DallasTemperature
@@ -87,6 +62,24 @@ uint8_t sensor3[8] = { 0x28, 0x3A, 0x5F, 0x94, 0x97, 0x03, 0x03, 0xCC };
 // Heater PID Settings
 double Setpoint, Input, Output;
 PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT); // Kp, Ki, Kd values
+
+// LCD interface pins
+const int rs = 48, en = 49, d4 = 50, d5 = 51, d6 = 52, d7 = 53;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+// Vars for LCD message display
+String space = "                "; // 16 spaces to fill the LCD screen
+String scrollMessageTop, scrollMessageBottom;
+
+// track state of the machine
+int currentState;
+// track number of people blowing
+static int numOfPpl = 0;
+// flow rate threshold for when someone stopped blowing
+const int FLOW_MIN_THRESHOLD = 2;
+// flow rate threshold for it to count as someone blowing
+const int FLOW_MAX_THRESHOLD = 1;
+// number of people blown threshold
+const int PEOPLE_THRESHOLD = 2;
 
 // Timer
 unsigned long desorptionStartTime;
@@ -188,7 +181,7 @@ void loop() {
         unsigned long flowStartTime = millis();
         double usersFlowRate = getUsersAverageFlow(currentFlow);
         unsigned long elapsedTime = millis() - flowStartTime;
-        displayMessagesOnLCD(elapsedTime, usersFlowRate);  // Print all the messages for user on LCD
+        displayUserBlowMessagesOnLCD(elapsedTime, usersFlowRate);  // Print all the messages for user on LCD
         numOfPpl++;
         Serial.println((String)numOfPpl + " have blown");
         updateLedStrip();
@@ -213,8 +206,7 @@ void loop() {
       currentFlow = getAverageFlow();
       if(currentFlow >= FLOW_MAX_THRESHOLD){ // when someone blows during desorption
         desorptionTimeLeft = desorptionDuration - (millis() - desorptionStartTime);
-        desorptionTimeLeft = desorptionTimeLeft/1000;
-        displayTimeLeftOnLCD(desorptionTimeLeft / 60, desorptionTimeLeft % 60);  // Print desorption time left on LCD
+        displayTimeLeftOnLCD(desorptionTimeLeft);  // Print desorption time left on LCD
       }
       if (millis() - desorptionStartTime >= desorptionDuration) {
         Serial.println("Exiting Desorption!");
@@ -227,44 +219,33 @@ void loop() {
   }
 }
 
-void displayMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
-  if (! ( elapsedTime == 0 || isnan(elapsedTime) || usersFlowRate == 0 || isnan(usersFlowRate) ) ){
-    float tubeArea = 0.00064516;
-  float densityCO2 = 1977;
+void displayUserBlowMessagesOnLCD(unsigned long elapsedTime, double usersFlowRate){
+  if (elapsedTime == 0 || isnan(elapsedTime) || usersFlowRate == 0 || isnan(usersFlowRate)){  //Invalid values
+    return;
+  }
   tcaselect(4);
   float breathConc = scd30_1.dataReady && scd30_1.read() ? scd30_1.CO2 : .04;
+  float tubeArea = 0.00064516;
+  float densityCO2 = 1977;
   float carbonEmitted = (elapsedTime/1000)*usersFlowRate*tubeArea*densityCO2*breathConc;
   carbonEmitted = round(carbonEmitted * 100.0) / 100.0;
-  messages[0][1] = (String)carbonEmitted + " grams";
-  messages[1][1] = "testalgea";  //Calculate algea produced
-
-  while(currentMessage < num_messages){
-    scrollMessageTop = messages[currentMessage][0] + space;
-    scrollMessageBottom = messages[currentMessage][1] + space;
-    for (int i = 0; i < scrollMessageTop.length() - 16; i++) {
-    lcd.clear(); // Clear the display
-    // Display a portion of the top message
-    lcd.setCursor(0, 0);
-    lcd.print(scrollMessageTop.substring(i, i + 16));
-    // Display a portion of the bottom message
-    lcd.setCursor(0, 1);
-    lcd.print(scrollMessageBottom.substring(i, i + 16));
-    if (i == 0) {
-      delay(5000); // Pause for 3 seconds when the full message is displayed
-    } else {
-      delay(300); // Adjust delay for scrolling speed
-    }
-  }
-  // Change to the next message set
-  currentMessage += 1;
-  }
-  currentMessage = 0;
-  } 
+  String topMessage = "Carbon Emitted: ";
+  String bottomMessage = (String)carbonEmitted + " grams";
+  displayMessage(topMessage, bottomMessage);
 }
 
-void displayTimeLeftOnLCD(unsigned int minutesLeft, unsigned int secondsLeft){
-  scrollMessageTop = "Desorbing, wait" + space;
-  scrollMessageBottom = (String)minutesLeft + ":" + (String)secondsLeft + " minutes" + space;
+void displayTimeLeftOnLCD(unsigned long desorptionTimeLeft){
+  unsigned long desorptionTimeLeftSeconds = desorptionTimeLeft/1000;
+  unsigned int minutesLeft = desorptionTimeLeftSeconds / 60;
+  unsigned int secondsLeft = desorptionTimeLeftSeconds % 60;
+  topMessage = "Desorbing, wait" + space;
+  bottomMessage = (String)minutesLeft + ":" + (String)secondsLeft + " minutes" + space;
+  displayMessage(topMessage, bottomMessage);
+}
+
+void displayMessage(String topMessage, String bottomMessage){
+  scrollMessageTop = topMessage + space;
+  scrollMessageBottom = bottomMessage + space;
   for (int i = 0; i <= scrollMessageTop.length() - 16; i++) {
     lcd.clear(); // Clear the display
     // Display a portion of the top message
@@ -398,3 +379,4 @@ float getTemperatureF(DeviceAddress deviceAddress){
   float tempC = sensors.getTempC(deviceAddress);
   return DallasTemperature::toFahrenheit(tempC);
 }
+
